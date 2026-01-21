@@ -1,0 +1,58 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+   output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id       String    @id @default(cuid())
+  email    String    @unique
+  passwordHash String
+  name     String?
+  // When this User is deleted, these projects will be deleted automatically
+  projects Project[]
+}
+
+model Project {
+  id          String            @id @default(cuid())
+  createdAt   DateTime          @default(now())
+  imageUrl    String            
+  
+  // Relation to User with Cascade Delete
+  userId      String?           
+  user        User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Relations to children (already set to Cascade)
+  suggestions Suggestion[]      
+  generated   GeneratedDesign[] 
+}
+
+model Suggestion {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  category    String   // layout, lighting, color, decor
+  impact      String   // high, medium
+  cost        String   // $, $$, $$$
+  isSelected  Boolean  @default(false)
+  
+  projectId   String
+  // When Project is deleted (either directly or via User deletion), this is deleted
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model GeneratedDesign {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  imageUrl  String   
+  prompt    String?  
+  
+  projectId String
+  // When Project is deleted, this is deleted
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
